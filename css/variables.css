@@ -1,18 +1,18 @@
 :root {
   /* Colors */
-  --color-crimson: #e9dbab;
-  --color-crimson-light: #f4ebcb;
-  --color-gold: #2f3034;
-  --color-gold-light: #3d3f44;
+  --color-crimson: #2f3034;
+  --color-crimson-light: #3d3f44;
+  --color-gold: #f6d403;
+  --color-gold-light: #ffe46e;
   --color-parchment: #f2f0e3;
   --color-card-bg: #f8f6ec;
   --color-ink: #1d1e21;
   --color-smoke: #595c62;
-  --color-green: #7f6500;
-  --color-green-light: #a88200;
-  --color-blue: #4c4f57;
-  --color-red: #4b4e54;
-  --color-red-light: #63666d;
+  --color-green: #9a7800;
+  --color-green-light: #c79c00;
+  --color-blue: #55585f;
+  --color-red: #3f4146;
+  --color-red-light: #5b5e64;
   --color-border: #d9d3bd;
   
   /* Fonts */
@@ -40,8 +40,8 @@ body {
   font-family: var(--font-sans);
   color: var(--color-ink);
   background:
-    radial-gradient(circle at 10% 5%, rgba(47, 48, 52, 0.10) 0%, rgba(47, 48, 52, 0) 34%),
-    radial-gradient(circle at 90% 0%, rgba(233, 219, 171, 0.18) 0%, rgba(233, 219, 171, 0) 30%),
+    radial-gradient(circle at 10% 5%, rgba(246, 212, 3, 0.16) 0%, rgba(246, 212, 3, 0) 34%),
+    radial-gradient(circle at 90% 0%, rgba(47, 48, 52, 0.08) 0%, rgba(47, 48, 52, 0) 30%),
     var(--color-parchment);
   margin: 0;
   padding: 0;
@@ -55,7 +55,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif-caps);
   margin: 0 0 var(--gap-md) 0;
-  color: var(--color-gold);
+  color: var(--color-crimson);
   font-weight: 600;
 }
 
