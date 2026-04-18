@@ -1,4 +1,76 @@
 /* Summary Cards */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap-lg);
+  background: rgba(29, 30, 33, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+}
+
+.auth-overlay.hidden {
+  display: none;
+}
+
+.auth-card {
+  width: min(460px, 100%);
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-top: 5px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  padding: var(--gap-xl);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.auth-logo {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  margin-bottom: var(--gap-md);
+}
+
+.auth-card h2 {
+  margin-bottom: var(--gap-sm);
+}
+
+.auth-card p {
+  color: var(--color-smoke);
+  margin-bottom: var(--gap-md);
+}
+
+#google-signin-button {
+  display: inline-flex;
+  justify-content: center;
+  min-height: 40px;
+  margin: var(--gap-sm) 0 var(--gap-md);
+}
+
+.auth-status {
+  min-height: 1.2rem;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.auth-status.error {
+  color: var(--color-red);
+}
+
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+}
+
+.auth-user {
+  color: var(--color-parchment);
+  font-size: 0.82rem;
+  opacity: 0.9;
+}
+
 .card {
   background-color: var(--color-card-bg);
   border-top: 3px solid var(--color-gold);
@@ -121,7 +193,7 @@ tbody td {
 }
 
 tbody tr:hover {
-  background-color: rgba(201, 168, 76, 0.1); /* Gold tint */
+  background-color: rgba(246, 212, 3, 0.14); /* Gold tint */
 }
 
 /* Table Typographies */
@@ -146,9 +218,9 @@ tbody tr:hover {
   text-transform: uppercase;
 }
 
-.badge-income { background-color: rgba(26, 92, 58, 0.1); color: var(--color-green); }
-.badge-expense { background-color: rgba(122, 28, 46, 0.1); color: var(--color-crimson); }
-.badge-neutral { background-color: rgba(107, 95, 74, 0.1); color: var(--color-smoke); }
+.badge-income { background-color: rgba(154, 120, 0, 0.14); color: var(--color-green); }
+.badge-expense { background-color: rgba(47, 48, 52, 0.14); color: var(--color-crimson); }
+.badge-neutral { background-color: rgba(89, 92, 98, 0.14); color: var(--color-smoke); }
 
 .badge-settled { background-color: var(--color-green); color: white; }
 .badge-open { background-color: var(--color-gold); color: var(--color-ink); }
@@ -262,7 +334,7 @@ input:focus, select:focus, textarea:focus {
 
 .net-flow-banner h2 { color: var(--color-gold); margin-bottom: var(--gap-sm); }
 .net-flow-banner .amount { font-family: var(--font-serif-italic); font-size: 2.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-.net-flow-banner .negative { color: #f8a5a5; }
+.net-flow-banner .negative { color: var(--color-gold-light); }
 
 /* Progress bars for cash flow */
 .progress-container {

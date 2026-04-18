@@ -19,6 +19,15 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <img src="assets/logo.png" alt="Ministry of Altar Servers Logo" class="auth-logo">
+      <h2>MOAS Cashbook Access</h2>
+      <p>Sign in with your authorized Google account to continue.</p>
+      <div id="google-signin-button"></div>
+      <p id="auth-status" class="auth-status"></p>
+    </div>
+  </div>
   
   <header>
     <div class="container">
@@ -28,10 +37,7 @@
           <p>Sta. Clara de Montefalco Parish, Pasay City</p>
         </div>
         <div class="header-logo">
-          <!-- Cross placeholder -->
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5v14M5 10h14" />
-          </svg>
+          <img src="assets/logo.png" alt="Ministry of Altar Servers Logo">
         </div>
       </div>
     </div>
@@ -41,7 +47,9 @@
         <div class="sync-dot" id="sync-indicator"></div>
         <span id="sync-text">Loading...</span>
       </div>
-      <div>
+      <div class="auth-actions">
+        <span id="auth-user" class="auth-user" style="display:none;"></span>
+        <button id="btn-signout" class="btn btn-secondary btn-sm" style="display:none;">Sign Out</button>
         <button id="btn-sync-now" class="btn btn-outline btn-sm">Sync Now</button>
       </div>
     </div>

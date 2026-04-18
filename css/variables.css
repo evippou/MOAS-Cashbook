@@ -1,19 +1,19 @@
 :root {
   /* Colors */
-  --color-crimson: #7A1C2E;
-  --color-crimson-light: #902D41;
-  --color-gold: #C9A84C;
-  --color-gold-light: #DDC37B;
-  --color-parchment: #F8F3E8;
-  --color-card-bg: #FAF6EC;
-  --color-ink: #1A1208;
-  --color-smoke: #6B5F4A;
-  --color-green: #1A5C3A;
-  --color-green-light: #2E8155;
-  --color-blue: #1A3A6E;
-  --color-red: #A31C1C;
-  --color-red-light: #CC3636;
-  --color-border: #E2DCCB;
+  --color-crimson: #2f3034;
+  --color-crimson-light: #3d3f44;
+  --color-gold: #f6d403;
+  --color-gold-light: #ffe46e;
+  --color-parchment: #f2f0e3;
+  --color-card-bg: #f8f6ec;
+  --color-ink: #1d1e21;
+  --color-smoke: #595c62;
+  --color-green: #9a7800;
+  --color-green-light: #c79c00;
+  --color-blue: #55585f;
+  --color-red: #3f4146;
+  --color-red-light: #5b5e64;
+  --color-border: #d9d3bd;
   
   /* Fonts */
   --font-serif-caps: 'Cinzel', serif;
@@ -39,7 +39,10 @@
 body {
   font-family: var(--font-sans);
   color: var(--color-ink);
-  background-color: var(--color-parchment);
+  background:
+    radial-gradient(circle at 10% 5%, rgba(246, 212, 3, 0.16) 0%, rgba(246, 212, 3, 0) 34%),
+    radial-gradient(circle at 90% 0%, rgba(47, 48, 52, 0.08) 0%, rgba(47, 48, 52, 0) 30%),
+    var(--color-parchment);
   margin: 0;
   padding: 0;
   box-sizing: border-box;

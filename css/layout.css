@@ -36,6 +36,23 @@ header {
   font-size: 1rem;
 }
 
+.header-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background-color: rgba(246, 212, 3, 0.12);
+  border: 1px solid rgba(246, 212, 3, 0.55);
+}
+
+.header-logo img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
 /* Sync Bar */
 .sync-bar {
   background-color: var(--color-crimson-light);
@@ -84,12 +101,12 @@ header {
 }
 
 .tab:hover {
-  color: var(--color-crimson);
+  color: var(--color-ink);
 }
 
 .tab.active {
-  color: var(--color-crimson);
-  border-bottom-color: var(--color-crimson);
+  color: var(--color-ink);
+  border-bottom-color: var(--color-gold);
 }
 
 /* Main Content Area */
@@ -172,6 +189,29 @@ main {
 }
 
 @media (max-width: 480px) {
+  .header-content {
+    align-items: flex-start;
+    gap: var(--gap-md);
+  }
+
+  .header-title h1 {
+    font-size: 1.3rem;
+  }
+
+  .header-title p {
+    font-size: 0.85rem;
+  }
+
+  .header-logo {
+    width: 58px;
+    height: 58px;
+  }
+
+  .header-logo img {
+    width: 50px;
+    height: 50px;
+  }
+
   .grid-3, .grid-2, .grid-4 {
     grid-template-columns: 1fr;
   }

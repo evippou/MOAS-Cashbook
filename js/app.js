@@ -1,5 +1,5 @@
 import { store } from './store.js';
-import { initAuth } from './auth.js';
+import { initAuth, signOut, getSignedInUser } from './auth.js';
 
 // Import views
 import { initCashbook } from './views/cashbook.js';
@@ -13,8 +13,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Wait for auth to complete
   const isAuth = await initAuth();
   if (!isAuth) {
-    document.body.innerHTML = '<div style="text-align:center; padding: 50px;"><h2>Access Denied</h2><p>Please log in with the authorized account.</p></div>';
     return;
+  }
+
+  const signOutBtn = document.getElementById('btn-signout');
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', () => {
+      signOut();
+      window.location.reload();
+    });
+  }
+
+  const currentUser = getSignedInUser();
+  if (currentUser?.email) {
+    const syncText = document.getElementById('sync-text');
+    if (syncText && syncText.textContent === 'Loading...') {
+      syncText.textContent = `Signed in as ${currentUser.email}`;
+    }
   }
 
   // Bind top level buttons (Sync)
