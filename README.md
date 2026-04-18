@@ -1,6 +1,6 @@
 # ✝ Ministry of Altar Servers — Bursary Cashbook
 
-A liturgically-styled, single-file web application for managing the financial records of the **Ministry of Altar Servers** of Sta. Clara de Montefalco Parish, Pasay. Built for the ministry bursar to record, track, and report all income and expenses with ease.
+A liturgically-styled web application for managing the financial records of the **Ministry of Altar Servers** of Sta. Clara de Montefalco Parish, Pasay. Features secure **Google authentication**, real-time **cloud sync**, and comprehensive financial reporting. Built for the ministry bursar to record, track, and report all income and expenses with ease.
 
 ---
 
@@ -36,6 +36,11 @@ A liturgically-styled, single-file web application for managing the financial re
 - Manage custom **Income** and **Expense** categories
 - Configure **JSONBin.io** cloud sync credentials
 
+### 🔐 Authentication
+- **Google Sign-In** for secure access
+- Email-based authorization (allowlist)
+- Session persistence with automatic logout
+
 ---
 
 ## ☁ Cloud Sync (JSONBin.io)
@@ -58,17 +63,42 @@ All data persists in the browser's `localStorage`. No internet connection is req
 
 ---
 
-## 🚀 How to Use
+## 🚀 Deployment
 
-1. Download or clone this repository
-2. Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari)
-3. No installation, no build step — it runs entirely in the browser
+### Netlify (Recommended)
 
-```
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
-open index.html
-```
+1. **Connect your repository** to Netlify
+2. **Set environment variables** in Netlify Site Settings:
+   - `GOOGLE_CLIENT_ID`: Your Google OAuth 2.0 Client ID
+   - `AUTHORIZED_EMAILS`: Comma-separated authorized email addresses (e.g., `user1@example.com,user2@example.com`)
+3. **Deploy**: Netlify will automatically build and deploy on push to `main`
+4. Access your app at your Netlify URL
+
+### Local Development
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/evippou/MOAS-Cashbook.git
+   cd MOAS-Cashbook
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env` file with your credentials:
+   ```
+   GOOGLE_CLIENT_ID=your_google_client_id_here
+   AUTHORIZED_EMAILS=your.email@example.com,other.email@example.com
+   ```
+
+4. Start the local server:
+   ```bash
+   npm start
+   ```
+
+5. Open `http://localhost:3000` in your browser
 
 ---
 
@@ -77,6 +107,10 @@ open index.html
 | Technology | Purpose |
 |---|---|
 | Vanilla HTML/CSS/JS | Core app — no frameworks |
+| [Google Identity Services](https://developers.google.com/identity) | Secure Google OAuth 2.0 authentication |
+| [google-auth-library](https://github.com/googleapis/google-auth-library-nodejs) | Server-side token verification |
+| [Express.js](https://expressjs.com/) | Local dev server and API routes |
+| [Netlify Functions](https://docs.netlify.com/functions/overview/) | Serverless auth endpoint verification |
 | [SheetJS (xlsx.js)](https://sheetjs.com/) | XLSX export |
 | [EB Garamond / Cinzel / Lato](https://fonts.google.com/) | Liturgical typography |
 | [JSONBin.io](https://jsonbin.io/) | Cloud sync & backup |
@@ -88,15 +122,54 @@ open index.html
 
 ```
 /
-└── index.html      # Entire app in a single file
-└── README.md       # This file
+├── index.html                          # Main HTML shell and view structure
+├── README.md                           # This file
+├── package.json                        # Node.js dependencies and scripts
+├── netlify.toml                        # Netlify build config and redirects
+├── .env.example                        # Sample environment variables
+├── .gitignore                          # Git ignore rules
+├── server.js                           # Local development server (Express)
+│
+├── css/
+│   ├── variables.css                   # Theme colors, fonts, spacing
+│   ├── layout.css                      # Header, tabs, modals, grids
+│   └── components.css                  # Cards, buttons, tables, forms, auth UI
+│
+├── js/
+│   ├── app.js                          # App initialization and bootstrap
+│   ├── auth.js                         # Google auth flow and session management
+│   ├── config.js                       # API endpoints and configuration
+│   ├── store.js                        # Data persistence and state management
+│   ├── utils.js                        # Utility functions
+│   ├── modules/                        # Core feature modules (cashbook, sync, etc.)
+│   └── views/                          # View controllers for each section
+│       ├── cashbook.js
+│       ├── cashflow.js
+│       ├── liquidation.js
+│       ├── record.js
+│       ├── settings.js
+│       └── transfer.js
+│
+├── netlify/functions/
+│   └── auth-google-verify.cjs          # Serverless function for token verification
+│
+└── assets/
+    └── logo.png                        # Ministry logo
 ```
 
 ---
 
 ## 🎨 Design
 
-The app uses a **liturgical visual theme** — crimson, gold, and parchment — consistent with the ministry's identity. Typography draws from classical serif fonts to evoke a reverent, parish-appropriate aesthetic.
+The app uses a **liturgical visual theme** — black, bright gold, and parchment — consistent with the ministry's identity. Typography draws from classical serif fonts to evoke a reverent, parish-appropriate aesthetic.
+
+## 🔐 Security
+
+- **Backend Token Verification**: All Google ID tokens are verified server-side using `google-auth-library`
+- **Email Allowlist**: Only authorized email addresses (configured via `AUTHORIZED_EMAILS`) can access the app
+- **Secure Sessions**: User sessions are managed in browser localStorage with automatic cleanup
+- **CORS-Protected**: API endpoints are protected against unauthorized access
+- **Environment Variables**: Sensitive credentials are stored securely in Netlify environment variables
 
 ---
 
@@ -104,10 +177,20 @@ The app uses a **liturgical visual theme** — crimson, gold, and parchment — 
 
 Developed for the **Ministry of Altar Servers**  
 📍 Sta. Clara de Montefalco Parish, Pasay City  
-Maintained by the Ministry Bursar
+Maintained by the Ministry Bursar  
+Hosted on [Netlify](https://netlify.com)
+
+## 🤝 Support
+
+For issues, feature requests, or contributions, please contact the Ministry Bursar or submit via the app's feedback mechanism.
 
 ---
 
-## 📜 License
+## 📜 License & Terms
 
-This project is for internal ministry use. Not licensed for public redistribution.
+This project is for internal ministry use only. Not licensed for public redistribution or external use without explicit written permission from the Ministry of Altar Servers and Sta. Clara de Montefalco Parish.
+
+---
+
+**Last Updated**: April 2026  
+**Version**: 2.0 (Authenticated & Deployed)
