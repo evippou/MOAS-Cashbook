@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--gap-lg);
-  background: rgba(29, 30, 33, 0.72);
+  background: rgba(243, 223, 138, 0.16);
   backdrop-filter: blur(4px);
   z-index: 2000;
 }
@@ -38,7 +38,7 @@
 }
 
 .auth-card p {
-  color: var(--color-smoke);
+  color: var(--color-ink);
   margin-bottom: var(--gap-md);
 }
 
@@ -66,7 +66,7 @@
 }
 
 .auth-user {
-  color: var(--color-parchment);
+  color: var(--color-ink);
   font-size: 0.82rem;
   opacity: 0.9;
 }
@@ -102,8 +102,8 @@
 }
 
 .card.income .amount { color: var(--color-green); }
-.card.expense .amount { color: var(--color-crimson); }
-.card.balance .amount { color: var(--color-gold); text-shadow: 1px 1px 0px rgba(0,0,0,0.1); }
+.card.expense .amount { color: var(--color-gold); }
+.card.balance .amount { color: var(--color-crimson); text-shadow: 1px 1px 0px rgba(0,0,0,0.1); }
 .card.balance .amount.negative { color: var(--color-red); }
 
 .card .subtitle {
@@ -128,7 +128,7 @@
 
 .btn-primary {
   background-color: var(--color-crimson);
-  color: var(--color-parchment);
+  color: var(--color-ink);
   border: 1px solid var(--color-crimson-light);
 }
 
@@ -155,7 +155,7 @@
 
 .btn-outline:hover {
   background-color: var(--color-gold);
-  color: var(--color-ink);
+  color: var(--color-crimson);
 }
 
 .btn-sm {
@@ -179,7 +179,7 @@ table {
 
 thead th {
   background-color: var(--color-crimson);
-  color: white;
+  color: var(--color-ink);
   font-family: var(--font-serif-caps);
   font-size: 0.85rem;
   padding: var(--gap-md);
@@ -193,7 +193,7 @@ tbody td {
 }
 
 tbody tr:hover {
-  background-color: rgba(246, 212, 3, 0.14); /* Gold tint */
+  background-color: rgba(243, 223, 138, 0.12); /* Soft yellow tint */
 }
 
 /* Table Typographies */
@@ -225,7 +225,7 @@ tbody tr:hover {
 .badge-settled { background-color: var(--color-green); color: white; }
 .badge-open { background-color: var(--color-gold); color: var(--color-ink); }
 .badge-partial { background-color: var(--color-blue); color: white; }
-.badge-overdue { background-color: var(--color-crimson); color: white; }
+.badge-overdue { background-color: var(--color-crimson); color: var(--color-ink); }
 
 /* Forms */
 .form-group {
@@ -284,7 +284,7 @@ input:focus, select:focus, textarea:focus {
 
 .type-toggle input[type="radio"]:checked + label {
   background-color: var(--color-crimson);
-  color: white;
+  color: var(--color-ink);
   border-color: var(--color-crimson);
 }
 
@@ -325,7 +325,7 @@ input:focus, select:focus, textarea:focus {
 /* Cash flow specific */
 .net-flow-banner {
   background-color: var(--color-crimson);
-  color: white;
+  color: var(--color-ink);
   padding: var(--gap-lg);
   border-radius: var(--radius-md);
   text-align: center;
@@ -334,7 +334,7 @@ input:focus, select:focus, textarea:focus {
 
 .net-flow-banner h2 { color: var(--color-gold); margin-bottom: var(--gap-sm); }
 .net-flow-banner .amount { font-family: var(--font-serif-italic); font-size: 2.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-.net-flow-banner .negative { color: var(--color-gold-light); }
+.net-flow-banner .negative { color: var(--color-red); }
 
 /* Progress bars for cash flow */
 .progress-container {

@@ -170,7 +170,7 @@ export function initLiquidation() {
         <p style="font-size: 0.85rem; color: var(--color-smoke); margin-bottom: var(--gap-md);">
           Resp: <strong>${liq.person}</strong>  |  Rel: ${formatDate(liq.dateRel)} ${liq.dateDue ? `| Due: ${formatDate(liq.dateDue)}` : ''}
         </p>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:var(--gap-sm); background-color:rgba(122,28,46,0.05); padding:8px; border-radius:4px; text-align:center;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:var(--gap-sm); background-color:var(--color-crimson-light); padding:8px; border-radius:4px; text-align:center;">
            <div><span style="font-size:0.75rem; color:var(--color-smoke); display:block;">Released</span><strong style="font-family:var(--font-serif-italic)">${formatCurrency(liq.released)}</strong></div>
            <div><span style="font-size:0.75rem; color:var(--color-smoke); display:block;">Disbursed</span><strong style="font-family:var(--font-serif-italic)">${formatCurrency(disTotal)}</strong></div>
            <div><span style="font-size:0.75rem; color:var(--color-smoke); display:block;">Balance</span><strong style="font-family:var(--font-serif-italic); color:${bal < 0 ? 'var(--color-crimson)' : 'var(--color-gold)'}">${formatCurrency(bal)}</strong></div>

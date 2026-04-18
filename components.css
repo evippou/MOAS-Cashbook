@@ -153,7 +153,7 @@ tbody tr:hover {
 .badge-settled { background-color: var(--color-green); color: white; }
 .badge-open { background-color: var(--color-gold); color: var(--color-ink); }
 .badge-partial { background-color: var(--color-blue); color: white; }
-.badge-overdue { background-color: var(--color-crimson); color: white; }
+.badge-overdue { background-color: var(--color-crimson); color: var(--color-ink); }
 
 /* Forms */
 .form-group {
@@ -262,7 +262,7 @@ input:focus, select:focus, textarea:focus {
 
 .net-flow-banner h2 { color: var(--color-gold); margin-bottom: var(--gap-sm); }
 .net-flow-banner .amount { font-family: var(--font-serif-italic); font-size: 2.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-.net-flow-banner .negative { color: #f8a5a5; }
+.net-flow-banner .negative { color: var(--color-red); }
 
 /* Progress bars for cash flow */
 .progress-container {
