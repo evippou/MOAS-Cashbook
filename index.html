@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ministry of Altar Servers | Cashbook</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Lato:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  
+  <!-- SheetJS -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="header-title">
+          <h1>Ministry of Altar Servers</h1>
+          <p>Sta. Clara de Montefalco Parish, Pasay City</p>
+        </div>
+        <div class="header-logo">
+          <!-- Cross placeholder -->
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 10h14" />
+          </svg>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sync-bar container">
+      <div class="sync-status">
+        <div class="sync-dot" id="sync-indicator"></div>
+        <span id="sync-text">Loading...</span>
+      </div>
+      <div>
+        <button id="btn-sync-now" class="btn btn-outline btn-sm">Sync Now</button>
+      </div>
+    </div>
+    
+    <div class="tabs container" id="nav-tabs">
+      <div class="tab active" data-target="view-cashbook">Cashbook</div>
+      <div class="tab" data-target="view-record">Record Entry</div>
+      <div class="tab" data-target="view-transfer">Fund Transfer</div>
+      <div class="tab" data-target="view-cashflow">Cash Flow</div>
+      <div class="tab" data-target="view-liquidation">Liquidation</div>
+      <div class="tab" data-target="view-settings">Settings</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Top Summary Cards (Shared across views via JS manipulation or specific view insertion. We'll place it here and show/hide it based on view) -->
+    <div id="summary-cards" class="grid-3">
+      <div class="card income">
+        <h3>Total Income</h3>
+        <p class="amount" id="card-income">₱0.00</p>
+        <p class="subtitle" id="card-income-count">0 entries</p>
+      </div>
+      <div class="card expense">
+        <h3>Total Expenses</h3>
+        <p class="amount" id="card-expense">₱0.00</p>
+        <p class="subtitle" id="card-expense-count">0 entries</p>
+      </div>
+      <div class="card balance">
+        <h3>Current Balance</h3>
+        <p class="amount" id="card-balance">₱0.00</p>
+        <p class="subtitle" id="card-balance-label">Surplus</p>
+      </div>
+    </div>
+
+    <!-- VIEWS -->
+    
+    <!-- Cashbook / Ledger View -->
+    <section id="view-cashbook" class="view-section active">
+      <div class="toolbar">
+        <input type="text" id="filter-search" placeholder="Search description, party...">
+        <select id="filter-type">
+          <option value="All">All Types</option>
+          <option value="Income">Income</option>
+          <option value="Expense">Expense</option>
+        </select>
+        <select id="filter-category"><option value="All">All Categories</option></select>
+        <select id="filter-mode"><option value="All">All Payment Modes</option></select>
+        <input type="month" id="filter-month">
+        <button id="btn-clear-filters" class="btn btn-secondary">Clear</button>
+        <button id="btn-export-xlsx" class="btn btn-primary" style="margin-left: auto;">Export XLSX</button>
+      </div>
+      
+      <div class="table-wrapper">
+        <table id="ledger-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Mode</th>
+              <th class="th-right">Income</th>
+              <th class="th-right">Expense</th>
+              <th class="th-right">Balance</th>
+              <th>Ref No.</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Record Entry View -->
+    <section id="view-record" class="view-section">
+      <h2 id="record-form-title">New Entry</h2>
+      <div class="card">
+        <form id="form-record">
+          <input type="hidden" id="entry-id">
+          
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Type</label>
+              <div class="type-toggle">
+                <input type="radio" id="type-income" name="entry-type" value="Income" checked>
+                <label for="type-income">Income</label>
+                <input type="radio" id="type-expense" name="entry-type" value="Expense">
+                <label for="type-expense">Expense</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="entry-date" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="entry-desc" required>
+          </div>
+          
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Amount (₱)</label>
+              <input type="number" step="0.01" min="0.01" id="entry-amount" required>
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="entry-category" required></select>
+            </div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Mode of Payment</label>
+              <select id="entry-mode" required>
+                <option value="Cash">Cash</option>
+                <option value="GCash">GCash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Check">Check</option>
+                <option value="Online Transfer">Online Transfer</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Reference / Receipt No.</label>
+              <input type="text" id="entry-ref">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label id="label-party">Received From / Paid To</label>
+            <input type="text" id="entry-party">
+          </div>
+          
+          <div class="form-group">
+            <label>Remarks</label>
+            <textarea id="entry-remarks" rows="2"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Receipt Photo (Optional for Expense)</label>
+            <input type="file" id="entry-receipt" accept="image/jpeg, image/png">
+            <canvas id="receipt-canvas" style="display:none;"></canvas>
+            <img id="receipt-preview" style="max-width: 150px; display: none; margin-top: var(--gap-sm); border: 1px solid var(--color-border);" />
+            <input type="hidden" id="entry-receipt-b64">
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="btn-cancel-entry" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Entry</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Fund Transfer View -->
+    <section id="view-transfer" class="view-section">
+      <h2>Fund Transfer</h2>
+      <p style="font-size: 0.9rem; color: var(--color-smoke); margin-bottom: var(--gap-lg);">Internal fund movements do not affect the overall balance.</p>
+      
+      <div class="card" style="margin-bottom: var(--gap-lg);">
+        <form id="form-transfer">
+          <input type="hidden" id="trans-id">
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="trans-date" required>
+            </div>
+            <div class="form-group">
+              <label>Amount (₱)</label>
+              <input type="number" step="0.01" min="0.01" id="trans-amount" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="trans-desc" required>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>From Fund/Account</label>
+              <input type="text" id="trans-from" required>
+            </div>
+            <div class="form-group">
+              <label>To Fund/Account</label>
+              <input type="text" id="trans-to" required>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Mode of Payment</label>
+              <select id="trans-mode" required>
+                <option value="Cash">Cash</option>
+                <option value="GCash">GCash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Reference No.</label>
+              <input type="text" id="trans-ref">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <input type="text" id="trans-notes">
+          </div>
+          <div class="form-actions">
+            <button type="button" id="btn-cancel-transfer" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Transfer</button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="table-wrapper">
+        <table id="transfer-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description & Notes</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Mode</th>
+              <th class="th-right">Amount</th>
+              <th>Ref</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Cash Flow View -->
+    <section id="view-cashflow" class="view-section">
+      <div class="toolbar">
+        <select id="cf-period">
+          <option value="ALL">All Time</option>
+          <!-- populated dynamically -->
+        </select>
+      </div>
+      
+      <div class="net-flow-banner">
+        <h2 id="cf-period-label">All Time</h2>
+        <p class="amount" id="cf-netflow">₱0.00</p>
+        <p id="cf-closing-balance" style="font-family: var(--font-serif-italic); font-size: 1.2rem; opacity: 0.9; margin-top: var(--gap-sm);">Closing Balance: ₱0.00</p>
+      </div>
+      
+      <div class="grid-2">
+        <div class="card">
+          <h3>Income by Category</h3>
+          <div id="cf-income-breakdown"></div>
+        </div>
+        <div class="card">
+          <h3>Expense by Category</h3>
+          <div id="cf-expense-breakdown"></div>
+        </div>
+      </div>
+      
+      <h3 style="margin-top: var(--gap-xl);">Monthly Summary</h3>
+      <div class="table-wrapper">
+        <table id="cf-monthly-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="th-right">Income</th>
+              <th class="th-right">Expenses</th>
+              <th class="th-right">Transfers</th>
+              <th class="th-right">Net Flow</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Liquidation View -->
+    <section id="view-liquidation" class="view-section">
+      <div class="grid-4" id="liq-stats">
+        <div class="card"><h3>Total Form</h3><p class="amount" id="liq-stat-total">0</p></div>
+        <div class="card"><h3>Open</h3><p class="amount" style="color:var(--color-gold)" id="liq-stat-open">0</p></div>
+        <div class="card"><h3>Settled</h3><p class="amount" style="color:var(--color-green)" id="liq-stat-settled">0</p></div>
+        <div class="card"><h3>Overdue</h3><p class="amount" style="color:var(--color-crimson)" id="liq-stat-overdue">0</p></div>
+      </div>
+      
+      <div class="toolbar" style="margin-top: var(--gap-lg); justify-content: space-between;">
+        <h2>Liquidations</h2>
+        <button id="btn-new-liquidation" class="btn btn-primary">New Liquidation</button>
+      </div>
+      
+      <div id="liquidation-list" class="grid-2">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- Settings View -->
+    <section id="view-settings" class="view-section">
+      <h2>Settings</h2>
+      
+      <div class="grid-2">
+        <div class="card">
+          <h3>Ministry Information</h3>
+          <div class="form-group">
+            <label>Ministry Name</label>
+            <input type="text" id="set-ministryName">
+          </div>
+          <div class="form-group">
+            <label>Bursar Name</label>
+            <input type="text" id="set-bursarName">
+          </div>
+          <div class="form-group">
+            <label>Moderator Name</label>
+            <input type="text" id="set-moderatorName">
+          </div>
+          <div class="form-group">
+            <label>Opening Balance (₱)</label>
+            <input type="number" step="0.01" id="set-openingBalance">
+          </div>
+          <div class="form-group">
+            <label>Fiscal Period</label>
+            <input type="text" id="set-fiscalPeriod">
+          </div>
+          <button id="btn-save-min-info" class="btn btn-primary">Save Info</button>
+        </div>
+        
+        <div class="card">
+          <h3>Cloud Sync (JSONBin.io)</h3>
+          <p style="font-size: 0.85rem; margin-bottom: var(--gap-md); color: var(--color-smoke);">Requires a v3 API credentials.</p>
+          <div class="form-group">
+            <label>API Key ($2b$10$...)</label>
+            <input type="text" id="set-jsonbinKey" placeholder="Leave empty for local storage only">
+          </div>
+          <div class="form-group">
+            <label>Bin ID</label>
+            <input type="text" id="set-jsonbinId">
+          </div>
+          <div class="form-actions" style="justify-content: flex-start; margin-top: var(--gap-md);">
+            <button id="btn-connect-sync" class="btn btn-primary">Connect</button>
+            <button id="btn-disconnect-sync" class="btn btn-secondary">Disconnect</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: var(--gap-lg);">
+        <div class="card">
+          <h3>Income Categories</h3>
+          <textarea id="set-incomeCats" rows="8" placeholder="One category per line"></textarea>
+          <button id="btn-save-inc-cats" class="btn btn-primary" style="margin-top: var(--gap-sm);">Save Categories</button>
+        </div>
+        <div class="card">
+          <h3>Expense Categories</h3>
+          <textarea id="set-expenseCats" rows="8" placeholder="One category per line"></textarea>
+          <button id="btn-save-exp-cats" class="btn btn-primary" style="margin-top: var(--gap-sm);">Save Categories</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modals -->
+  
+  <!-- Receipt Viewer Modal -->
+  <div id="modal-receipt" class="modal-overlay">
+    <div class="modal-content" style="text-align: center; max-width: 800px;">
+      <h3 id="receipt-viewer-title">Receipt / Reference</h3>
+      <img id="receipt-viewer-img" style="max-width: 100%; max-height: 70vh; border: 1px solid var(--color-border); margin-bottom: var(--gap-lg);" />
+      <div>
+        <button id="btn-close-receipt" class="btn btn-outline">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liquidation Edit Modal -->
+  <div id="modal-liquidation" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="modal-liq-title">Liquidation Details</h3>
+      <form id="form-liquidation">
+        <input type="hidden" id="liq-id">
+        <div class="form-group">
+          <label>Title / Purpose</label>
+          <input type="text" id="liq-title" required>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Responsible Person</label>
+            <input type="text" id="liq-person" required>
+          </div>
+          <div class="form-group">
+            <label>Amount Released (₱)</label>
+            <input type="number" step="0.01" min="0" id="liq-released" required>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Date Released</label>
+            <input type="date" id="liq-dateRel" required>
+          </div>
+          <div class="form-group">
+            <label>Date Due (Optional)</label>
+            <input type="date" id="liq-dateDue">
+          </div>
+        </div>
+        
+        <hr style="border:0; border-top: 1px solid var(--color-border); margin: var(--gap-lg) 0;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap-sm);">
+          <h4>Line Items</h4>
+          <button type="button" id="btn-add-liq-item" class="btn btn-sm btn-secondary">+ Add Item</button>
+        </div>
+        
+        <div id="liq-items-container" style="display: flex; flex-direction: column; gap: var(--gap-sm); margin-bottom: var(--gap-md);">
+          <!-- Items inserted here -->
+        </div>
+        
+        <div style="background-color: rgba(201, 168, 76, 0.1); padding: var(--gap-md); border-radius: var(--radius-sm); display: flex; justify-content: space-between; font-weight: 600;">
+          <span>Remaining Balance:</span>
+          <span id="liq-balance-display" style="color: var(--color-crimson);">₱0.00</span>
+        </div>
+        
+        <div class="form-group" style="margin-top: var(--gap-md);">
+          <label>Remarks</label>
+          <input type="text" id="liq-remarks">
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" id="btn-close-liq-modal" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Application Script Modules -->
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
