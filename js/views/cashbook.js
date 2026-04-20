@@ -8,6 +8,7 @@ export function initCashbook() {
   const categoryFilter = document.getElementById('filter-category');
   const modeFilter = document.getElementById('filter-mode');
   const monthFilter = document.getElementById('filter-month');
+  const dateOrderFilter = document.getElementById('filter-date-order');
   const btnClear = document.getElementById('btn-clear-filters');
   const btnExport = document.getElementById('btn-export-xlsx');
   
@@ -23,7 +24,7 @@ export function initCashbook() {
   store.subscribe(render);
 
   // Bind filters
-  [searchInput, typeFilter, categoryFilter, modeFilter, monthFilter].forEach(el => {
+  [searchInput, typeFilter, categoryFilter, modeFilter, monthFilter, dateOrderFilter].forEach(el => {
     el.addEventListener('input', renderTable);
   });
   
@@ -33,6 +34,7 @@ export function initCashbook() {
     categoryFilter.value = 'All';
     modeFilter.value = 'All';
     monthFilter.value = '';
+    dateOrderFilter.value = 'desc';
     renderTable();
   });
   
@@ -144,6 +146,7 @@ export function initCashbook() {
     const tCat = categoryFilter.value;
     const tMode = modeFilter.value;
     const tMonth = monthFilter.value;
+    const dateOrder = dateOrderFilter.value;
 
     const filtered = withBalances.filter(t => {
       const matchSearch = (t.desc || '').toLowerCase().includes(search) || 
@@ -157,7 +160,9 @@ export function initCashbook() {
       return matchSearch && matchType && matchCat && matchMode && matchMonth;
     });
 
-    filtered.forEach((t, index) => {
+    const ordered = dateOrder === 'asc' ? filtered : filtered.slice().reverse();
+
+    ordered.forEach((t, index) => {
       const tr = document.createElement('tr');
       const amt = parseFloat(t.amount);
       const isInc = t.type === 'Income';

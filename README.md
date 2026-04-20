@@ -177,12 +177,12 @@ The app uses a **liturgical visual theme** — black, bright gold, and parchment
 
 Developed for the **Ministry of Altar Servers**  
 📍 Sta. Clara de Montefalco Parish, Pasay City  
-Maintained by the Ministry Bursar  
+Maintained by the Ministry Auditor  
 Hosted on [Netlify](https://netlify.com)
 
 ## 🤝 Support
 
-For issues, feature requests, or contributions, please contact the Ministry Bursar or submit via the app's feedback mechanism.
+For issues, feature requests, or contributions, please contact the Ministry Auditor.
 
 ---
 
@@ -192,5 +192,5 @@ This project is for internal ministry use only. Not licensed for public redistri
 
 ---
 
-**Last Updated**: April 2026  
+**Last Updated**: April 18, 2026  
 **Version**: 2.0 (Authenticated & Deployed)
