@@ -98,10 +98,13 @@
         <select id="filter-category"><option value="All">All Categories</option></select>
         <select id="filter-mode"><option value="All">All Payment Modes</option></select>
         <input type="month" id="filter-month">
-        <select id="filter-date-order">
-          <option value="desc">Latest on Top</option>
-          <option value="asc">Latest at Bottom</option>
-        </select>
+        <div class="toolbar-field">
+          <label for="filter-date-order" class="toolbar-label">Date Order</label>
+          <select id="filter-date-order" aria-label="Date Order">
+            <option value="desc">Latest on Top</option>
+            <option value="asc">Latest at Bottom</option>
+          </select>
+        </div>
         <button id="btn-clear-filters" class="btn btn-secondary">Clear</button>
         <button id="btn-export-xlsx" class="btn btn-primary" style="margin-left: auto;">Export XLSX</button>
       </div>
