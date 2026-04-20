@@ -4,6 +4,26 @@ const SESSION_KEY = 'moas_auth_user';
 
 const VERIFY_ENDPOINT = AppConfig.AUTH_VERIFY_ENDPOINT || '/api/auth/google/verify';
 
+function isLocalDevHost() {
+  return (
+    location.hostname === 'localhost' ||
+    location.hostname === '127.0.0.1' ||
+    location.protocol === 'file:'
+  );
+}
+
+function shouldBypassLocalAuth() {
+  return Boolean(AppConfig.LOCAL_DEV_AUTH_BYPASS) && isLocalDevHost();
+}
+
+function buildLocalDevUser() {
+  return {
+    email: AppConfig.LOCAL_DEV_USER_EMAIL || 'local.dev@moas.cashbook',
+    name: 'Local Developer',
+    role: 'dev-bypass'
+  };
+}
+
 function setStatus(message, isError = false) {
   const statusEl = document.getElementById('auth-status');
   if (!statusEl) return;
@@ -36,6 +56,12 @@ function updateUserBadge(user) {
     userEl.style.display = 'none';
     signOutBtn.style.display = 'none';
   }
+}
+
+function updateDevModeBadge(active) {
+  const devBadge = document.getElementById('dev-mode-badge');
+  if (!devBadge) return;
+  devBadge.style.display = active ? 'inline-flex' : 'none';
 }
 
 function persistSession(user) {
@@ -79,6 +105,18 @@ async function ensureGoogleScript() {
 }
 
 export async function initAuth() {
+  if (shouldBypassLocalAuth()) {
+    const localUser = getSession() || buildLocalDevUser();
+    persistSession(localUser);
+    hideOverlay();
+    setStatus('');
+    updateUserBadge(localUser);
+    updateDevModeBadge(true);
+    return true;
+  }
+
+  updateDevModeBadge(false);
+
   if (!AppConfig.GOOGLE_CLIENT_ID) {
     showOverlay();
     setStatus('Set GOOGLE_CLIENT_ID in js/config.js first.', true);
@@ -171,6 +209,7 @@ export async function initAuth() {
 export function signOut() {
   clearSession();
   updateUserBadge(null);
+  updateDevModeBadge(shouldBypassLocalAuth());
   showOverlay();
   setStatus('Signed out. Please sign in again.');
 }
