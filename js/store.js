@@ -15,7 +15,9 @@ const defaultState = {
   },
   transactions: [],
   transfers: [],
-  liquidations: []
+  liquidations: [],
+  // Tombstone lists — track IDs of deleted items so deletions sync correctly
+  deletedIds: { transactions: [], transfers: [], liquidations: [] }
 };
 
 class Store {
@@ -25,21 +27,26 @@ class Store {
     this.syncStatus = 'synced'; // synced, syncing, error
     this.loadFromLocal();
     
-    this.debouncedSync = debounce(this.syncToCloud.bind(this), 1500);
+    this.debouncedSync = debounce(this.syncWithCloud.bind(this), 1500);
   }
 
-  mergeCollections(localItems = [], remoteItems = []) {
+  mergeCollections(localItems = [], remoteItems = [], deletedIds = []) {
     const merged = new Map();
+    const deletedSet = new Set(deletedIds);
 
     localItems.forEach(item => {
-      if (item && item.id) merged.set(item.id, item);
+      if (item && item.id && !deletedSet.has(item.id)) merged.set(item.id, item);
     });
 
     remoteItems.forEach(item => {
-      if (item && item.id) merged.set(item.id, item);
+      if (item && item.id && !deletedSet.has(item.id)) merged.set(item.id, item);
     });
 
     return Array.from(merged.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
+  mergeDeletedIds(local = [], remote = []) {
+    return Array.from(new Set([...local, ...remote]));
   }
 
   loadFromLocal() {
@@ -47,11 +54,15 @@ class Store {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Merge defaults
         this.state = {
           ...defaultState,
           ...parsed,
-          settings: { ...defaultState.settings, ...(parsed.settings || {}) }
+          settings: { ...defaultState.settings, ...(parsed.settings || {}) },
+          deletedIds: {
+            transactions: parsed.deletedIds?.transactions || [],
+            transfers: parsed.deletedIds?.transfers || [],
+            liquidations: parsed.deletedIds?.liquidations || []
+          }
         };
       } catch(e) {
         console.error("Local storage parsing error: ", e);
@@ -74,7 +85,6 @@ class Store {
     this.listeners.forEach(l => l());
   }
 
-  // Setting status updates indicator in DOM directly for simplicity
   setSyncStatus(status) {
     this.syncStatus = status;
     const dot = document.getElementById('sync-indicator');
@@ -85,26 +95,61 @@ class Store {
     }
   }
 
-  async syncToCloud() {
+  async syncWithCloud() {
     const { jsonbinKey, jsonbinId } = this.state.settings;
     if (!jsonbinKey || !jsonbinId) {
-      this.setSyncStatus('synced'); // No cloud config, so it's technically synced locally
+      this.setSyncStatus('synced');
       return;
     }
 
     this.setSyncStatus('syncing');
 
     try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}`, {
+      // Step 1: Pull latest from cloud
+      const getRes = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}/latest`, {
+        method: 'GET',
+        headers: { 'X-Master-Key': jsonbinKey }
+      });
+
+      let mergedState = this.state;
+
+      if (getRes.ok) {
+        const data = await getRes.json();
+        const remote = data.record || {};
+
+        // Step 2: Merge remote into local (union of all data, deletions respected)
+        const mergedDeletedIds = {
+          transactions: this.mergeDeletedIds(this.state.deletedIds?.transactions, remote.deletedIds?.transactions),
+          transfers: this.mergeDeletedIds(this.state.deletedIds?.transfers, remote.deletedIds?.transfers),
+          liquidations: this.mergeDeletedIds(this.state.deletedIds?.liquidations, remote.deletedIds?.liquidations)
+        };
+
+        mergedState = {
+          ...this.state,
+          ...remote,
+          settings: { ...this.state.settings, ...(remote.settings || {}) },
+          deletedIds: mergedDeletedIds,
+          transactions: this.mergeCollections(this.state.transactions, remote.transactions, mergedDeletedIds.transactions),
+          transfers: this.mergeCollections(this.state.transfers, remote.transfers, mergedDeletedIds.transfers),
+          liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations, mergedDeletedIds.liquidations)
+        };
+
+        this.state = mergedState;
+        localStorage.setItem('_cb', JSON.stringify(this.state));
+        this.notify();
+      }
+
+      // Step 3: Push merged state back to cloud so other devices get everything
+      const putRes = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'X-Master-Key': jsonbinKey
         },
-        body: JSON.stringify(this.state)
+        body: JSON.stringify(mergedState)
       });
 
-      if (!response.ok) throw new Error('Cloud sync failed');
+      if (!putRes.ok) throw new Error('Cloud push failed');
       this.setSyncStatus('synced');
     } catch (error) {
       console.error(error);
@@ -112,47 +157,14 @@ class Store {
     }
   }
 
+  // pullFromCloud is now an alias for syncWithCloud (bidirectional)
   async pullFromCloud() {
-    const { jsonbinKey, jsonbinId } = this.state.settings;
-    if (!jsonbinKey || !jsonbinId) return;
-
-    this.setSyncStatus('syncing');
-
-    try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}/latest`, {
-        method: 'GET',
-        headers: {
-          'X-Master-Key': jsonbinKey
-        }
-      });
-
-      if (!response.ok) throw new Error('Cloud pull failed');
-      const data = await response.json();
-
-      const remote = data.record || {};
-      const nextState = {
-        ...this.state,
-        ...remote,
-        settings: { ...this.state.settings, ...(remote.settings || {}) },
-        transactions: this.mergeCollections(this.state.transactions, remote.transactions),
-        transfers: this.mergeCollections(this.state.transfers, remote.transfers),
-        liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations)
-      };
-
-      this.state = nextState;
-      localStorage.setItem('_cb', JSON.stringify(this.state));
-      this.notify();
-      this.setSyncStatus('synced');
-    } catch (error) {
-      console.error(error);
-      this.setSyncStatus('error');
-    }
+    return this.syncWithCloud();
   }
 
   // Transactions API
   addTransaction(tx) {
     this.state.transactions.push(tx);
-    // Sort transactions by date ASC always
     this.state.transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
     this.saveToLocal();
   }
@@ -168,11 +180,13 @@ class Store {
 
   deleteTransaction(id) {
     this.state.transactions = this.state.transactions.filter(t => t.id !== id);
+    if (!this.state.deletedIds.transactions.includes(id)) {
+      this.state.deletedIds.transactions.push(id);
+    }
     this.saveToLocal();
   }
 
   // Transfers API
-  /* Similar patterns for transfers and liquidations */
   addTransfer(tx) {
     this.state.transfers.push(tx);
     this.state.transfers.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -181,6 +195,9 @@ class Store {
   
   deleteTransfer(id) {
     this.state.transfers = this.state.transfers.filter(t => t.id !== id);
+    if (!this.state.deletedIds.transfers.includes(id)) {
+      this.state.deletedIds.transfers.push(id);
+    }
     this.saveToLocal();
   }
 
@@ -200,6 +217,9 @@ class Store {
 
   deleteLiquidation(id) {
     this.state.liquidations = this.state.liquidations.filter(l => l.id !== id);
+    if (!this.state.deletedIds.liquidations.includes(id)) {
+      this.state.deletedIds.liquidations.push(id);
+    }
     this.saveToLocal();
   }
 
