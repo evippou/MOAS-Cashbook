@@ -15,7 +15,9 @@ const defaultState = {
   },
   transactions: [],
   transfers: [],
-  liquidations: []
+  liquidations: [],
+  // Tombstone lists — track IDs of deleted items so deletions sync correctly
+  deletedIds: { transactions: [], transfers: [], liquidations: [] }
 };
 
 class Store {
@@ -28,18 +30,23 @@ class Store {
     this.debouncedSync = debounce(this.syncToCloud.bind(this), 1500);
   }
 
-  mergeCollections(localItems = [], remoteItems = []) {
+  mergeCollections(localItems = [], remoteItems = [], deletedIds = []) {
     const merged = new Map();
+    const deletedSet = new Set(deletedIds);
 
     localItems.forEach(item => {
-      if (item && item.id) merged.set(item.id, item);
+      if (item && item.id && !deletedSet.has(item.id)) merged.set(item.id, item);
     });
 
     remoteItems.forEach(item => {
-      if (item && item.id) merged.set(item.id, item);
+      if (item && item.id && !deletedSet.has(item.id)) merged.set(item.id, item);
     });
 
     return Array.from(merged.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
+  mergeDeletedIds(local = [], remote = []) {
+    return Array.from(new Set([...local, ...remote]));
   }
 
   loadFromLocal() {
@@ -51,7 +58,12 @@ class Store {
         this.state = {
           ...defaultState,
           ...parsed,
-          settings: { ...defaultState.settings, ...(parsed.settings || {}) }
+          settings: { ...defaultState.settings, ...(parsed.settings || {}) },
+          deletedIds: {
+            transactions: parsed.deletedIds?.transactions || [],
+            transfers: parsed.deletedIds?.transfers || [],
+            liquidations: parsed.deletedIds?.liquidations || []
+          }
         };
       } catch(e) {
         console.error("Local storage parsing error: ", e);
@@ -130,13 +142,22 @@ class Store {
       const data = await response.json();
 
       const remote = data.record || {};
+
+      // Merge tombstone lists first so deletions from either device are respected
+      const mergedDeletedIds = {
+        transactions: this.mergeDeletedIds(this.state.deletedIds?.transactions, remote.deletedIds?.transactions),
+        transfers: this.mergeDeletedIds(this.state.deletedIds?.transfers, remote.deletedIds?.transfers),
+        liquidations: this.mergeDeletedIds(this.state.deletedIds?.liquidations, remote.deletedIds?.liquidations)
+      };
+
       const nextState = {
         ...this.state,
         ...remote,
         settings: { ...this.state.settings, ...(remote.settings || {}) },
-        transactions: this.mergeCollections(this.state.transactions, remote.transactions),
-        transfers: this.mergeCollections(this.state.transfers, remote.transfers),
-        liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations)
+        deletedIds: mergedDeletedIds,
+        transactions: this.mergeCollections(this.state.transactions, remote.transactions, mergedDeletedIds.transactions),
+        transfers: this.mergeCollections(this.state.transfers, remote.transfers, mergedDeletedIds.transfers),
+        liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations, mergedDeletedIds.liquidations)
       };
 
       this.state = nextState;
@@ -168,6 +189,9 @@ class Store {
 
   deleteTransaction(id) {
     this.state.transactions = this.state.transactions.filter(t => t.id !== id);
+    if (!this.state.deletedIds.transactions.includes(id)) {
+      this.state.deletedIds.transactions.push(id);
+    }
     this.saveToLocal();
   }
 
@@ -181,6 +205,9 @@ class Store {
   
   deleteTransfer(id) {
     this.state.transfers = this.state.transfers.filter(t => t.id !== id);
+    if (!this.state.deletedIds.transfers.includes(id)) {
+      this.state.deletedIds.transfers.push(id);
+    }
     this.saveToLocal();
   }
 
@@ -200,6 +227,9 @@ class Store {
 
   deleteLiquidation(id) {
     this.state.liquidations = this.state.liquidations.filter(l => l.id !== id);
+    if (!this.state.deletedIds.liquidations.includes(id)) {
+      this.state.deletedIds.liquidations.push(id);
+    }
     this.saveToLocal();
   }
 
