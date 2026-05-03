@@ -28,6 +28,20 @@ class Store {
     this.debouncedSync = debounce(this.syncToCloud.bind(this), 1500);
   }
 
+  mergeCollections(localItems = [], remoteItems = []) {
+    const merged = new Map();
+
+    localItems.forEach(item => {
+      if (item && item.id) merged.set(item.id, item);
+    });
+
+    remoteItems.forEach(item => {
+      if (item && item.id) merged.set(item.id, item);
+    });
+
+    return Array.from(merged.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
   loadFromLocal() {
     const saved = localStorage.getItem('_cb');
     if (saved) {
@@ -114,14 +128,20 @@ class Store {
 
       if (!response.ok) throw new Error('Cloud pull failed');
       const data = await response.json();
-      
-      const remote = data.record;
-      // Conflict resolution: remote wins if more transactions
-      if (remote && remote.transactions && remote.transactions.length >= this.state.transactions.length) {
-        this.state = remote;
-        localStorage.setItem('_cb', JSON.stringify(this.state));
-        this.notify();
-      }
+
+      const remote = data.record || {};
+      const nextState = {
+        ...this.state,
+        ...remote,
+        settings: { ...this.state.settings, ...(remote.settings || {}) },
+        transactions: this.mergeCollections(this.state.transactions, remote.transactions),
+        transfers: this.mergeCollections(this.state.transfers, remote.transfers),
+        liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations)
+      };
+
+      this.state = nextState;
+      localStorage.setItem('_cb', JSON.stringify(this.state));
+      this.notify();
       this.setSyncStatus('synced');
     } catch (error) {
       console.error(error);
