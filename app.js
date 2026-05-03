@@ -49,4 +49,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to pull initial data if configured
   store.pullFromCloud();
+
+  const refreshCloud = () => store.pullFromCloud();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshCloud();
+    }
+  });
+  window.addEventListener('focus', refreshCloud);
+  setInterval(refreshCloud, 60000);
 });
