@@ -27,7 +27,7 @@ class Store {
     this.syncStatus = 'synced'; // synced, syncing, error
     this.loadFromLocal();
     
-    this.debouncedSync = debounce(this.syncToCloud.bind(this), 1500);
+    this.debouncedSync = debounce(this.syncWithCloud.bind(this), 1500);
   }
 
   mergeCollections(localItems = [], remoteItems = [], deletedIds = []) {
@@ -97,26 +97,61 @@ class Store {
     }
   }
 
-  async syncToCloud() {
+  async syncWithCloud() {
     const { jsonbinKey, jsonbinId } = this.state.settings;
     if (!jsonbinKey || !jsonbinId) {
-      this.setSyncStatus('synced'); // No cloud config, so it's technically synced locally
+      this.setSyncStatus('synced');
       return;
     }
 
     this.setSyncStatus('syncing');
 
     try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}`, {
+      // Step 1: Pull latest from cloud
+      const getRes = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}/latest`, {
+        method: 'GET',
+        headers: { 'X-Master-Key': jsonbinKey }
+      });
+
+      let mergedState = this.state;
+
+      if (getRes.ok) {
+        const data = await getRes.json();
+        const remote = data.record || {};
+
+        // Step 2: Merge remote into local (union of all data, deletions respected)
+        const mergedDeletedIds = {
+          transactions: this.mergeDeletedIds(this.state.deletedIds?.transactions, remote.deletedIds?.transactions),
+          transfers: this.mergeDeletedIds(this.state.deletedIds?.transfers, remote.deletedIds?.transfers),
+          liquidations: this.mergeDeletedIds(this.state.deletedIds?.liquidations, remote.deletedIds?.liquidations)
+        };
+
+        mergedState = {
+          ...this.state,
+          ...remote,
+          settings: { ...this.state.settings, ...(remote.settings || {}) },
+          deletedIds: mergedDeletedIds,
+          transactions: this.mergeCollections(this.state.transactions, remote.transactions, mergedDeletedIds.transactions),
+          transfers: this.mergeCollections(this.state.transfers, remote.transfers, mergedDeletedIds.transfers),
+          liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations, mergedDeletedIds.liquidations)
+        };
+
+        this.state = mergedState;
+        localStorage.setItem('_cb', JSON.stringify(this.state));
+        this.notify();
+      }
+
+      // Step 3: Push merged state back to cloud so other devices get everything
+      const putRes = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'X-Master-Key': jsonbinKey
         },
-        body: JSON.stringify(this.state)
+        body: JSON.stringify(mergedState)
       });
 
-      if (!response.ok) throw new Error('Cloud sync failed');
+      if (!putRes.ok) throw new Error('Cloud push failed');
       this.setSyncStatus('synced');
     } catch (error) {
       console.error(error);
@@ -124,50 +159,9 @@ class Store {
     }
   }
 
+  // pullFromCloud is now an alias for syncWithCloud (bidirectional)
   async pullFromCloud() {
-    const { jsonbinKey, jsonbinId } = this.state.settings;
-    if (!jsonbinKey || !jsonbinId) return;
-
-    this.setSyncStatus('syncing');
-
-    try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}/latest`, {
-        method: 'GET',
-        headers: {
-          'X-Master-Key': jsonbinKey
-        }
-      });
-
-      if (!response.ok) throw new Error('Cloud pull failed');
-      const data = await response.json();
-
-      const remote = data.record || {};
-
-      // Merge tombstone lists first so deletions from either device are respected
-      const mergedDeletedIds = {
-        transactions: this.mergeDeletedIds(this.state.deletedIds?.transactions, remote.deletedIds?.transactions),
-        transfers: this.mergeDeletedIds(this.state.deletedIds?.transfers, remote.deletedIds?.transfers),
-        liquidations: this.mergeDeletedIds(this.state.deletedIds?.liquidations, remote.deletedIds?.liquidations)
-      };
-
-      const nextState = {
-        ...this.state,
-        ...remote,
-        settings: { ...this.state.settings, ...(remote.settings || {}) },
-        deletedIds: mergedDeletedIds,
-        transactions: this.mergeCollections(this.state.transactions, remote.transactions, mergedDeletedIds.transactions),
-        transfers: this.mergeCollections(this.state.transfers, remote.transfers, mergedDeletedIds.transfers),
-        liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations, mergedDeletedIds.liquidations)
-      };
-
-      this.state = nextState;
-      localStorage.setItem('_cb', JSON.stringify(this.state));
-      this.notify();
-      this.setSyncStatus('synced');
-    } catch (error) {
-      console.error(error);
-      this.setSyncStatus('error');
-    }
+    return this.syncWithCloud();
   }
 
   // Transactions API
