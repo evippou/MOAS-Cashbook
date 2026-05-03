@@ -34,12 +34,22 @@ class Store {
     const merged = new Map();
     const deletedSet = new Set(deletedIds);
 
+    // Index local items first
     localItems.forEach(item => {
       if (item && item.id && !deletedSet.has(item.id)) merged.set(item.id, item);
     });
 
+    // Remote items win on merge, EXCEPT keep local receipt if remote only has placeholder
     remoteItems.forEach(item => {
-      if (item && item.id && !deletedSet.has(item.id)) merged.set(item.id, item);
+      if (item && item.id && !deletedSet.has(item.id)) {
+        const local = merged.get(item.id);
+        if (local && item.receipt === '[local-only]' && local.receipt && local.receipt !== '[local-only]') {
+          // Preserve the real local receipt
+          merged.set(item.id, { ...item, receipt: local.receipt });
+        } else {
+          merged.set(item.id, item);
+        }
+      }
     });
 
     return Array.from(merged.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -95,6 +105,17 @@ class Store {
     }
   }
 
+  // Strip base64 receipt images before cloud upload to stay within JSONBin 100KB free limit.
+  // Receipts remain intact in localStorage on the device that uploaded them.
+  stripReceiptsForCloud(state) {
+    return {
+      ...state,
+      transactions: (state.transactions || []).map(t => ({ ...t, receipt: t.receipt ? '[local-only]' : null })),
+      transfers: (state.transfers || []).map(t => ({ ...t, receipt: t.receipt ? '[local-only]' : null })),
+      liquidations: (state.liquidations || []).map(l => ({ ...l, receipt: l.receipt ? '[local-only]' : null }))
+    };
+  }
+
   async syncWithCloud() {
     const { jsonbinKey, jsonbinId } = this.state.settings;
     if (!jsonbinKey || !jsonbinId) {
@@ -148,7 +169,7 @@ class Store {
           'Content-Type': 'application/json',
           'X-Master-Key': jsonbinKey
         },
-        body: JSON.stringify(mergedState)
+        body: JSON.stringify(this.stripReceiptsForCloud(mergedState))
       });
 
       if (!putRes.ok) {
@@ -160,8 +181,6 @@ class Store {
     } catch (error) {
       console.error('Sync error:', error);
       this.setSyncStatus('error');
-      // Show actual error so we can diagnose it
-      alert(`Sync Error: ${error.message}`);
     }
   }
 
