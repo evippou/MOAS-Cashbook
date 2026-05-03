@@ -111,33 +111,35 @@ class Store {
         headers: { 'X-Master-Key': jsonbinKey }
       });
 
-      let mergedState = this.state;
-
-      if (getRes.ok) {
-        const data = await getRes.json();
-        const remote = data.record || {};
-
-        // Step 2: Merge remote into local (union of all data, deletions respected)
-        const mergedDeletedIds = {
-          transactions: this.mergeDeletedIds(this.state.deletedIds?.transactions, remote.deletedIds?.transactions),
-          transfers: this.mergeDeletedIds(this.state.deletedIds?.transfers, remote.deletedIds?.transfers),
-          liquidations: this.mergeDeletedIds(this.state.deletedIds?.liquidations, remote.deletedIds?.liquidations)
-        };
-
-        mergedState = {
-          ...this.state,
-          ...remote,
-          settings: { ...this.state.settings, ...(remote.settings || {}) },
-          deletedIds: mergedDeletedIds,
-          transactions: this.mergeCollections(this.state.transactions, remote.transactions, mergedDeletedIds.transactions),
-          transfers: this.mergeCollections(this.state.transfers, remote.transfers, mergedDeletedIds.transfers),
-          liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations, mergedDeletedIds.liquidations)
-        };
-
-        this.state = mergedState;
-        localStorage.setItem('_cb', JSON.stringify(this.state));
-        this.notify();
+      if (!getRes.ok) {
+        const errBody = await getRes.text().catch(() => '');
+        throw new Error(`GET failed ${getRes.status}: ${errBody}`);
       }
+
+      let mergedState = this.state;
+      const data = await getRes.json();
+      const remote = data.record || {};
+
+      // Step 2: Merge remote into local (union of all data, deletions respected)
+      const mergedDeletedIds = {
+        transactions: this.mergeDeletedIds(this.state.deletedIds?.transactions, remote.deletedIds?.transactions),
+        transfers: this.mergeDeletedIds(this.state.deletedIds?.transfers, remote.deletedIds?.transfers),
+        liquidations: this.mergeDeletedIds(this.state.deletedIds?.liquidations, remote.deletedIds?.liquidations)
+      };
+
+      mergedState = {
+        ...this.state,
+        ...remote,
+        settings: { ...this.state.settings, ...(remote.settings || {}) },
+        deletedIds: mergedDeletedIds,
+        transactions: this.mergeCollections(this.state.transactions, remote.transactions, mergedDeletedIds.transactions),
+        transfers: this.mergeCollections(this.state.transfers, remote.transfers, mergedDeletedIds.transfers),
+        liquidations: this.mergeCollections(this.state.liquidations, remote.liquidations, mergedDeletedIds.liquidations)
+      };
+
+      this.state = mergedState;
+      localStorage.setItem('_cb', JSON.stringify(this.state));
+      this.notify();
 
       // Step 3: Push merged state back to cloud so other devices get everything
       const putRes = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinId}`, {
@@ -149,11 +151,17 @@ class Store {
         body: JSON.stringify(mergedState)
       });
 
-      if (!putRes.ok) throw new Error('Cloud push failed');
+      if (!putRes.ok) {
+        const errBody = await putRes.text().catch(() => '');
+        throw new Error(`PUT failed ${putRes.status}: ${errBody}`);
+      }
+
       this.setSyncStatus('synced');
     } catch (error) {
-      console.error(error);
+      console.error('Sync error:', error);
       this.setSyncStatus('error');
+      // Show actual error so we can diagnose it
+      alert(`Sync Error: ${error.message}`);
     }
   }
 
